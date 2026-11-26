@@ -1,0 +1,10 @@
+{
+  "description": "Organize despesas, receitas, contas, cartões e orçamentos em um só lugar, com visão clara dos compromissos financeiros para você e sua família.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
