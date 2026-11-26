@@ -1,3 +1,4 @@
+﻿import { AiDiagnosis } from './AiDiagnosis'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Card, Category, DemoState, Expense, Income, Occurrence, PaymentMethod, REF_DATE, STORAGE_KEY,
@@ -212,23 +213,26 @@ function Dashboard({ state, month, setTab, setModal, onQuick, flash }: { state: 
       <div className="summary-card"><span>Despesas</span><strong className="red">{money(expenses)}</strong></div>
     </section>
     <p className="summary-note">Saldo = receitas registradas menos despesas confirmadas, incluindo as contas a pagar. Esse saldo não é saldo bancário.</p>
-    <section className="card"><div className="card-head"><div><h2>Nova transação</h2><p>Adicione um registro e revise antes de salvar.</p></div><button className="text-link" onClick={()=>setModal({kind:'expense',receipt:true})}>Usar recibo de exemplo</button></div>
-      <div className="quick-grid"><Field label="Descrição"><input value={quick.description} onChange={e=>setQuick({...quick,description:e.target.value})}/></Field><Field label="Valor (R$)"><input value={quick.amount} inputMode="decimal" onChange={e=>setQuick({...quick,amount:e.target.value})}/></Field><Field label="Categoria"><select value={quick.category} onChange={e=>setQuick({...quick,category:e.target.value})}>{(quick.type==='Receita'?['Salário','Trabalho extra','Outros']:categories).map(c=><option key={c}>{c}</option>)}</select></Field><Field label="Tipo"><select value={quick.type} onChange={e=>setQuick({...quick,type:e.target.value,category:e.target.value==='Receita'?'Salário':'Alimentação'})}><option>Despesa</option><option>Receita</option></select></Field></div>
-      <Button className="full" onClick={quickSubmit}>Revisar transação</Button>
-    </section>
-    <section className="card"><div className="card-head"><div><h2>Contas do mês</h2><p>Compromissos confirmados e próximos vencimentos.</p></div><button className="text-link" onClick={()=>setTab('Agenda')}>Consultar agenda</button></div>
+    <section className="card">
+  <div className="card-head">
+    <div>
+      <h2>Diagnóstico financeiro com IA</h2>
+      <p>Receba três dicas personalizadas para economizar.</p>
+    </div>
+  </div>
+  <AiDiagnosis state={state} month={month} pendingCents={payable}/>
+</section>
+    
+    <section className="card"><div className="card-head"><div><h2>Contas do mês</h2><p>Compromissos confirmados e próximos vencimentos.</p></div><button className="text-link" onClick={()=>setTab('Despesas')}>Consultar agenda</button></div>
       <div className="account-summary"><div><span>A pagar</span><b>{money(payable)}</b></div><div><span>Faturas em aberto</span><b>{money(openInvoices)}</b></div><div><span>Próximo vencimento</span><b>{unpaidOutside.sort((a,b)=>a.dueDate.localeCompare(b.dueDate))[0]?`${dateBR(unpaidOutside[0].dueDate).slice(0,5)} · ${unpaidOutside[0].expense.description}`:'Tudo pago'}</b></div></div>
       {unpaidOutside.some(o=>occurrenceStatus(o)==='Atrasada')&&<div className="alert">1 conta em atraso. Energia elétrica venceu em 08/11/2026.</div>}
     </section>
-    <section className="card"><div className="card-head"><div><h2>Metas de gastos do mês</h2><p>Resumo das três metas mais utilizadas.</p></div><button className="text-link" onClick={()=>setTab('Orçamento')}>Ver orçamento</button></div>
-      <div className="goal-form"><Field label="Categoria"><select value={goalCat} onChange={e=>setGoalCat(e.target.value as Category)}>{categories.map(c=><option key={c}>{c}</option>)}</select></Field><Field label="Limite mensal (R$)"><input value={goalValue} onChange={e=>setGoalValue(e.target.value)}/></Field><Button onClick={()=>{const n=parseMoney(goalValue);if(Number.isFinite(n)&&n>=0){onQuick({...state.incomes[0],id:'__budget__',amount:n,category:goalCat});setGoalValue('')}}}>Salvar meta</Button></div>
-      <div className="goals">{ranked.map(r=><div key={r.c}><div><b>{r.c}</b><span>{money(r.spent)} / {money(r.limit)} · {Math.round(r.p)}%</span></div><div className="progress"><i style={{width:`${Math.min(r.p,100)}%`}}/></div><small>{r.p>100?`Acima do limite em ${money(r.spent-r.limit)}`:r.p>=80?'Próximo do limite':'Dentro do planejado'}</small></div>)}</div>
-    </section>
+    
     <section className="card"><div className="card-head"><div><h2>Para onde vai o dinheiro</h2><p>Distribuição do mês selecionado.</p></div><div className="segments"><button className={chartType==='Despesas'?'active':''} onClick={()=>setChartType('Despesas')}>Despesas</button><button className={chartType==='Receitas'?'active':''} onClick={()=>setChartType('Receitas')}>Receitas</button><button className={chartView==='Rosca'?'active':''} onClick={()=>setChartView('Rosca')}>Rosca</button><button className={chartView==='Barras'?'active':''} onClick={()=>setChartView('Barras')}>Barras</button></div></div>
       {chartView==='Rosca'?<Donut values={chartValues}/>:<div className="bar-chart">{chartValues.filter(v=>v.value).map(v=><div key={v.label}><span>{v.label}</span><i><b style={{width:`${v.value/Math.max(...chartValues.map(x=>x.value))*100}%`,background:v.color}}/></i><strong>{money(v.value)}</strong></div>)}</div>}
     </section>
     <section className="card"><div className="card-head"><div><h2>Últimas transações</h2><p>Receitas e despesas reunidas.</p></div><button className="text-link" onClick={()=>setExpanded(!expanded)}>{expanded?'Mostrar recentes':'Ver todas'}</button></div>
-      <div className="transactions">{(expanded?transactions:transactions.slice(0,5)).map(t=><div className="transaction" key={t.id}><div><b>{t.description}</b><span>{t.category} · {dateBR(t.date)} · {t.status} · {t.type}</span></div><strong className={t.amount>0?'green':'red'}>{t.amount>0?'+':'−'} {money(Math.abs(t.amount))}</strong><div className="row-actions"><button aria-label={`Editar ${t.description}`} onClick={()=>setModal(t.expense?{kind:'expense',expense:t.expense}:{kind:'income',income:t.income})}><Icon name="edit"/></button><button aria-label={`Excluir ${t.description}`} onClick={()=>setModal(t.expense?{kind:'deleteExpense',expense:t.expense}:{kind:'deleteIncome',income:t.income!})}><Icon name="trash"/></button></div></div>)}</div>
+      <div className="transactions">{(expanded?transactions:transactions.slice(0,5)).map(t=><div className="transaction" key={t.id}><div><b>{t.description}</b><span>{t.category} · {dateBR(t.date)} · {t.status} · {t.type}</span></div><strong className={t.amount>0?'green':'red'}>{t.amount>0?'+':'−'} {money(Math.abs(t.amount))}</strong><div className="row-actions"><button aria-label={`Editar ${t.description}`} onClick={()=>setModal('expense' in t?{kind:'expense',expense:t.expense}:{kind:'income',income:t.income})}><Icon name="edit"/></button><button aria-label={`Excluir ${t.description}`} onClick={()=>setModal('expense' in t?{kind:'deleteExpense',expense:t.expense}:{kind:'deleteIncome',income:t.income!})}><Icon name="trash"/></button></div></div>)}</div>
     </section>
     <section className="card"><div className="card-head"><div><h2>Diagnóstico financeiro</h2><p>Análise simples por regras locais, sem IA externa.</p></div><Button variant="success" onClick={()=>setDiagnosis(true)}>Analisar finanças</Button></div>
       {diagnosis&&<div className="diagnosis"><div><b>Raio-X</b><p>Maior categoria: {largest}, com {money(byCategory[largest])}.</p></div><div><b>Resultado do mês</b><p>{incomes-expenses>=0?'Resultado positivo':'Resultado negativo'} de {money(Math.abs(incomes-expenses))}. Não é previsão de saldo bancário.</p></div><div><b>Próximos passos</b><p>{unpaidOutside.filter(o=>occurrenceStatus(o)==='Atrasada').length} conta(s) em atraso. Revise compromissos e metas.</p></div></div>}
@@ -255,7 +259,7 @@ function Agenda({state,month,setModal}:{state:DemoState;month:string;setModal:(m
   const rows=[...outside.map(o=>({key:o.key,name:o.expense.description,amount:o.amount,due:o.dueDate,status:occurrenceStatus(o),occ:o})),...invoices.map(i=>({key:`inv-${i.card.id}`,name:`Fatura · ${i.card.name}`,amount:i.total,due:i.dueDate,status:i.forecast?'Previsão':i.paid?'Paga':i.dueDate<REF_DATE?'Atrasada':'Pendente',invoice:i}))].filter(r=>match(r.status)).sort((a,b)=>a.due.localeCompare(b.due))
   return <><div className="calendar-banner"><Icon name="calendar"/><div><b>{rows.filter(r=>r.status==='Pendente'||r.status==='Atrasada').length} compromissos aguardando registro</b><p>Registre somente pagamentos já realizados. Nenhum valor é movimentado pela plataforma.</p></div></div>
     <section className="card"><div className="card-head"><div><h2>Contas por vencimento</h2><p>Contas e faturas, sem duplicar os lançamentos.</p></div></div><div className="filter-tabs">{['Pendências','Todas','Atrasadas','Pagas','Previsões'].map(f=><button className={filter===f?'active':''} onClick={()=>setFilter(f)} key={f}>{f}</button>)}</div>
-      {rows.length?<div className="agenda-list">{rows.map(r=><div key={r.key}><div><b>{r.name}</b><span>Vencimento {dateBR(r.due)}</span></div><Status>{r.status}</Status><strong>{money(r.amount)}</strong>{r.status==='Previsão'?<span className="muted">Somente previsão</span>:<Button variant="secondary" onClick={()=>r.occ?setModal({kind:'payment',occurrence:r.occ}):setModal({kind:'invoice',card:r.invoice!.card})}>{r.status==='Paga'?'Ver pagamento':'Registrar pagamento'}</Button>}</div>)}</div>:<div className="empty"><h3>Tudo certo por aqui</h3><p>Não há compromissos neste filtro.</p></div>}
+      {rows.length?<div className="agenda-list">{rows.map(r=><div key={r.key}><div><b>{r.name}</b><span>Vencimento {dateBR(r.due)}</span></div><Status>{r.status}</Status><strong>{money(r.amount)}</strong>{r.status==='Previsão'?<span className="muted">Somente previsão</span>:<Button variant="secondary" onClick={()=>'occ' in r?setModal({kind:'payment',occurrence:r.occ}):setModal({kind:'invoice',card:r.invoice!.card})}>{r.status==='Paga'?'Ver pagamento':'Registrar pagamento'}</Button>}</div>)}</div>:<div className="empty"><h3>Tudo certo por aqui</h3><p>Não há compromissos neste filtro.</p></div>}
     </section></>
 }
 
@@ -280,6 +284,7 @@ function BudgetPage({state,month,setModal,openExpenses}:{state:DemoState;month:s
 
 function App() {
   const [state,setState]=useState<DemoState>(()=>{try{const raw=localStorage.getItem(STORAGE_KEY);if(!raw)return seedState();const parsed=JSON.parse(raw);if(validState(parsed))return{...parsed,incomes:Array.isArray(parsed.incomes)?parsed.incomes:[],invoicePayments:Array.isArray(parsed.invoicePayments)?parsed.invoicePayments:[]};return seedState()}catch{return seedState()}})
+  const [transactionTab,setTransactionTab]=useState('Lançamentos');
   const [tab,setTab]=useState<Tab>('Dashboard'),[month,setMonth]=useState('2026-11'),[modal,setModal]=useState<Modal>(null),[notice,setNotice]=useState(''),[storageError,setStorageError]=useState(false)
   const [undo,setUndo]=useState<{label:string;restore:()=>void}|null>(null)
   useEffect(()=>{try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));setStorageError(false)}catch{setStorageError(true)}},[state])
@@ -289,19 +294,45 @@ function App() {
   const saveIncome=(income:Income)=>{setState(s=>({...s,incomes:s.incomes.some(i=>i.id===income.id)?s.incomes.map(i=>i.id===income.id?income:i):[...s.incomes,income]}));setMonth(monthOf(income.date));setModal(null);flash('Receita salva com sucesso.')}
   const deleteExpense=(expense:Expense)=>{const previous=state;setState(s=>({...s,expenses:s.expenses.filter(e=>e.id!==expense.id)}));setUndo({label:`${expense.description} foi excluída.`,restore:()=>setState(previous)});setModal(null)}
   const deleteIncome=(income:Income)=>{const previous=state;setState(s=>({...s,incomes:s.incomes.filter(i=>i.id!==income.id)}));setUndo({label:`${income.description} foi excluída.`,restore:()=>setState(previous)});setModal(null)}
-  const title=tab==='Dashboard'?'Visão geral':tab
+  const title=tab==='Dashboard'?'Visão geral':tab==='Despesas'?'Transações':tab
   const subtitle:Record<Tab,string>={Dashboard:'Acompanhe seu mês em um só lugar.',Despesas:'Consulte, organize e revise cada lançamento.',Agenda:'Contas e faturas em ordem de vencimento.','Cartões e faturas':'Acompanhe as compras e as próximas parcelas.',Orçamento:'Defina limites e acompanhe seus gastos.'}
   const updateBudget=(data:Record<Category,number>)=>{setState(s=>({...s,budgets:{...s.budgets,[month]:data}}));setModal(null);flash('Limites atualizados.')}
   const quickHandler=(item:Income|Expense)=>{if(item.id==='__budget__'){const c=item.category as Category;updateBudget({...Object.fromEntries(categories.map(x=>[x,state.budgets[month]?.[x]||0])) as Record<Category,number>,[c]:item.amount})}else if('method'in item)saveExpense(item);else saveIncome(item)}
   return <div className="app">
     <a className="skip-link" href="#main">Pular para o conteúdo</a>
     <header className="site-header"><div><div className="brand">Infaturamento</div><p>Controle suas finanças com simplicidade.</p></div><div className="demo-tools"><span>Dados de demonstração</span><button className="icon-button" aria-label="Informações sobre a demonstração" onClick={()=>setModal({kind:'about'})}><Icon name="info"/></button></div></header>
-    <nav className="tabs" aria-label="Áreas do Infaturamento">{(['Dashboard','Despesas','Agenda','Cartões e faturas','Orçamento'] as Tab[]).map(t=><button key={t} className={tab===t?'active':''} aria-current={tab===t?'page':undefined} onClick={()=>setTab(t)}>{t}</button>)}</nav>
+    <nav className="tabs" aria-label="Áreas do Infaturamento">{(['Dashboard','Despesas','Orçamento'] as Tab[]).map(t=><button key={t} className={tab===t?'active':''} aria-current={tab===t?'page':undefined} onClick={()=>setTab(t)}>{t==='Despesas'?'Transações':t}</button>)}</nav>
     <main id="main">
       <div className="page-head"><div><h1>{title}</h1><p>{subtitle[tab]}</p></div><div><Field label="Mês"><input type="month" value={month} onChange={e=>setMonth(e.target.value)}/></Field><Button onClick={()=>setModal({kind:'expense'})}><Icon name="plus"/> Nova despesa</Button></div></div>
       {storageError&&<div className="warning">Não foi possível salvar. Os dados estão somente nesta sessão.</div>}
       {tab==='Dashboard'&&<Dashboard state={state} month={month} setTab={setTab} setModal={setModal} onQuick={quickHandler} flash={flash}/>}
-      {tab==='Despesas'&&<ExpensesPage state={state} month={month} setMonth={setMonth} setModal={setModal}/>}
+      {tab==='Despesas'&&<>
+  <section className="card">
+    <div className="card-head">
+      <h2>Registrar transação</h2>
+      <div className="segments">
+        <Button onClick={()=>setModal({kind:'income'})}>Nova receita</Button>
+        <Button onClick={()=>setModal({kind:'expense'})}>Nova despesa</Button>
+      </div>
+    </div>
+  </section>
+  <nav className="tabs" aria-label="Tipos de transações">
+  {['Lançamentos','Vencimentos','Cartões'].map(item=>
+    <button key={item}
+      className={transactionTab===item?'active':''}
+      onClick={()=>setTransactionTab(item)}>
+      {item}
+    </button>
+  )}
+</nav>
+
+{transactionTab==='Lançamentos'&&
+  <ExpensesPage state={state} month={month} setMonth={setMonth} setModal={setModal}/>}
+{transactionTab==='Vencimentos'&&
+  <Agenda state={state} month={month} setModal={setModal}/>}
+{transactionTab==='Cartões'&&
+  <CardsPage state={state} month={month} setMonth={setMonth} setModal={setModal}/>}
+</>}
       {tab==='Agenda'&&<Agenda state={state} month={month} setModal={setModal}/>}
       {tab==='Cartões e faturas'&&<CardsPage state={state} month={month} setMonth={setMonth} setModal={setModal}/>}
       {tab==='Orçamento'&&<BudgetPage state={state} month={month} setModal={setModal} openExpenses={()=>setTab('Despesas')}/>}
@@ -347,7 +378,12 @@ function BudgetsModal({values,category,save,close,month}:{values:Partial<Record<
   return <ModalShell title={category?`Editar limite · ${category}`:'Editar limites'} close={close}><p className="hint">Limites independentes para {monthLabel(month)}.</p><div className="budget-fields">{shown.map(c=><Field key={c} label={`${c} (R$)`}><input inputMode="decimal" value={draft[c]} onChange={e=>setDraft({...draft,[c]:e.target.value})}/></Field>)}</div><div className="modal-actions"><Button variant="secondary" onClick={close}>Cancelar</Button><Button onClick={()=>{const next=Object.fromEntries(categories.map(c=>[c,parseMoney(draft[c])])) as Record<Category,number>;if(Object.values(next).every(v=>Number.isFinite(v)&&v>=0&&v<=100000000))save(next)}}>Salvar limites</Button></div></ModalShell>
 }
 function AboutModal({close,restore}:{close:()=>void;restore:()=>void}) {
-  return <ModalShell title="Sobre a demonstração" close={close}><div className="about-copy"><p>Todos os dados são fictícios e a data de referência é fixa em <b>10/11/2026</b>.</p><p>Sugestões e diagnósticos usam somente regras locais, sem IA externa. As alterações ficam armazenadas apenas neste navegador.</p><p>O Infaturamento registra pagamentos já realizados, mas não movimenta dinheiro, não se conecta a bancos e não realiza pagamentos reais.</p></div><div className="modal-actions"><Button variant="danger" onClick={restore}>Restaurar demonstração</Button><Button onClick={close}>Entendi</Button></div></ModalShell>
+  return <ModalShell title="Sobre a demonstração" close={close}><div className="about-copy"><p>Todos os dados são fictícios e a data de referência é fixa em <b>10/11/2026</b>.</p><p>Com sua autorização, o diagnóstico por IA envia totais financeiros ao Google Gemini. As alterações ficam armazenadas apenas neste navegador.</p><p>O Infaturamento registra pagamentos já realizados, mas não movimenta dinheiro, não se conecta a bancos e não realiza pagamentos reais.</p></div><div className="modal-actions"><Button variant="danger" onClick={restore}>Restaurar demonstração</Button><Button onClick={close}>Entendi</Button></div></ModalShell>
 }
 
 export default App
+
+
+
+
+

@@ -237,3 +237,20 @@ footer button { border: 0; background: none; color: #4f46e5; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
 }
+
+.ai-diagnosis { border-top: 1px solid #e2e8f0; padding-top: 16px; }
+.ai-diagnosis .card-head { padding: 0; align-items: flex-start; }
+.ai-diagnosis h3 { font-size: 15px; margin: 0 0 6px; }
+.ai-badge { background: #eef2ff; color: #4338ca; border-radius: 5px; padding: 5px 8px; font-size: 11px; white-space: nowrap; }
+.ai-consent { margin: 16px 0 8px; font-size: 12px; line-height: 1.8; align-items: flex-start; }
+.ai-consent input { flex-shrink: 0; margin-top: 5px; }
+.ai-diagnosis .hint { margin: 8px 0 15px; }
+.ai-diagnosis .button:disabled { opacity: .55; cursor: not-allowed; }
+.ai-error { background: #fff1f2; padding: 12px; border-radius: 6px; line-height: 1.8; }
+.ai-report { margin-top: 20px; line-height: 1.8; }
+.ai-metadata { color: #64748b; font-size: 11px; }
+.ai-report ol { list-style: decimal; padding-left: 22px; }
+.ai-report li { padding: 15px 0; border-bottom: 1px solid #e2e8f0; }
+.ai-report li > span { color: #4338ca; font-size: 11px; }
+.ai-report h4 { margin: 5px 0; font-size: 14px; }
+.ai-report li p { margin: 6px 0; }

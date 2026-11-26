@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import fs from 'node:fs'
 import path from 'node:path'
+import { financialAi } from './server/vite-ai-plugin.ts'
 
 import siteConfiguration from './.figma/make/site.json'
 
@@ -19,6 +20,7 @@ export default defineConfig(({ mode }) => {
       minify: !emitSourcemaps,
     },
     plugins: [
+      financialAi(),
 react(),
       tailwindcss(),
       figmaSiteConfiguration(siteConfiguration),
@@ -33,7 +35,7 @@ react(),
       },
     },
     server: {
-      host: process.env.FIGMA_DEV_SERVER_HOST || '0.0.0.0',
+      host: process.env.FIGMA_DEV_SERVER_HOST || '127.0.0.1',
       port: parseInt(process.env.PORT || '8443'),
       strictPort: true,
       // Tool files are separate from application source and must not trigger preview updates.
@@ -42,7 +44,7 @@ react(),
       },
     },
     preview: {
-      host: process.env.FIGMA_DEV_SERVER_HOST || '0.0.0.0',
+      host: process.env.FIGMA_DEV_SERVER_HOST || '127.0.0.1',
       port: parseInt(process.env.PORT || '8443'),
     },
   }
