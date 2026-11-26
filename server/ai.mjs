@@ -1,4 +1,4 @@
-const CATEGORIES = ['Alimentação', 'Moradia', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Compras', 'Outros'];
+﻿const CATEGORIES = ['Alimentação', 'Moradia', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Compras', 'Outros'];
 const failure = (message, status = 400) => Object.assign(new Error(message), { status });
 const amount = value => Number.isSafeInteger(value) && value >= 0 && value <= 100000000000;
 
@@ -34,6 +34,12 @@ export async function generateReport(summary, { apiKey, model = 'gemini-3.5-flas
     } }),
   });
   if (!response.ok) {
+    const details = await response.json().catch(() => ({}));
+    console.error("GEMINI_ERROR", {
+      httpStatus: response.status,
+      googleStatus: details.error?.status,
+      reason: details.error?.details?.find(d => d.reason)?.reason
+    });
     const message = response.status === 429 ? 'O Gemini atingiu o limite de uso ou a cota disponível. Confira a cota no AI Studio e tente depois.' : [401, 403].includes(response.status) ? 'A chave não foi aceita ou não tem acesso ao modelo. Confira o projeto no AI Studio.' : response.status === 404 ? 'Modelo indisponível. Confira GEMINI_MODEL e os modelos disponíveis na sua conta.' : 'O serviço de IA está indisponível. Tente novamente mais tarde.';
     throw failure(message, response.status === 429 ? 429 : 502);
   }
@@ -73,3 +79,4 @@ export function createAiMiddleware(options) {
     } catch (error) { send(error.status || 502, { error: error.status ? error.message : 'Não foi possível conectar à IA no tempo esperado. Tente novamente.' }); }
   };
 }
+
