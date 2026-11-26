@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import {
   Card, Category, DemoState, Expense, Income, Occurrence, PaymentMethod, REF_DATE, STORAGE_KEY,
   addMonths, categories, categoryColors, categoryIcons, categorySuggestion, dateBR, dateInMonth,
@@ -319,6 +320,7 @@ function App() {
     {modal?.kind==='budgets'&&<BudgetsModal month={month} values={state.budgets[month]||{}} category={modal.category} close={()=>setModal(null)} save={updateBudget}/>}
     {modal?.kind==='about'&&<AboutModal close={()=>setModal(null)} restore={()=>setModal({kind:'restore'})}/>}
     {modal?.kind==='restore'&&<ModalShell title="Restaurar demonstração?" close={()=>setModal(null)}><p>Esta ação substituirá todos os registros atuais pelos dados fictícios iniciais.</p><div className="modal-actions"><Button variant="secondary" onClick={()=>setModal(null)}>Cancelar</Button><Button variant="danger" onClick={()=>{setState(seedState());setMonth('2026-11');setTab('Dashboard');setModal(null);flash('Demonstração restaurada.')}}>Sim, restaurar tudo</Button></div></ModalShell>}
+    <Analytics />
   </div>
 }
 
